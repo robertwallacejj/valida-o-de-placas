@@ -3,20 +3,12 @@
 // @namespace    jms-automacao
 // @version      5.3
 // @description  Confere as placas da planilha VALIDACAO_JMS na RELAÇÃO DE PLACAS do Feishu e envia pelo Feishu Mail um e-mail para cada transportadora com as placas que faltam cadastrar
-// @match        https://docs.google.com/spreadsheets/d/*
-// @match        https://jtexpress.sg.feishu.cn/mail*
+// @match        *://*/*
 // @noframes
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant        GM_xmlhttpRequest
 // @grant        GM_openInTab
-// @connect      open.feishu.cn
-// @connect      docs.google.com
-// @connect      drive.google.com
-// @connect      drive.usercontent.google.com
-// @connect      googleusercontent.com
-// @require      https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js
-// @run-at       document-idle
+// @grant        GM_xmlhttpRequest
 // ==/UserScript==
 
 /*
@@ -51,15 +43,13 @@
   };
 
   // Base "Forms_Transportadores", tabela RELAÇÃO DE PLACAS.
-  // Link: https://jtexpress.sg.feishu.cn/base/VSA8bJNHOaWyNcsfeh8lUrqigv6?table=tbltpK4zfkcNmOVV
-  //   appToken = código depois de /base/     tableId = código depois de ?table=
   // O App Secret é uma SENHA: não compartilhe este arquivo fora da equipe.
   // O app precisa de "Pode ler" na Base (Compartilhar -> adicionar o app).
   const FEISHU = {
-    appId: 'cli_aac8d61496b85cb0',
-    appSecret: 'XEYQLAOkjxp9UP7XkZJRJbGe678rcDCs',
-    appToken: 'VSA8bJNHOaWyNcsfeh8lUrqigv6',
-    tableId: 'tbltpK4zfkcNmOVV',
+    appId: 'confidencial',
+    appSecret: 'confidencial',
+    appToken: 'confidencial',
+    tableId: 'confidencial',
     // nomes das colunas na tabela (se não achar igual, usa a que contém "placa" / "transportador")
     colunaPlaca: 'PLACA',
     colunaTransportadora: 'NOME DO TRANSPORTADOR',
@@ -84,31 +74,7 @@
   // Transportadora nova: adicione uma linha.
 
   const EMAILS_FIXOS = {
-    '3ZX Transportes': ['renata.souza@3zx.com.br', 'virliz.gaudio@3zx.com.br'],
-    'BBR Agrolog Ltda': ['mateus.pereira@bbragrolog.com', 'daniel.santos@bbragrolog.com', 'financeiro@bbragrolog.com'],
-    'BLIXX INVESTIMENTOS': ['gustavo@blixxlog.com', 'max@blixxlog.com'],
-    'CEOS EXPRESS': [
-      'illidy.goncalves@dasassessoria.com',
-      'josiane.goncalves@ceosexpress.com',
-      'venicioaguiar.ceos@gmail.com',
-      'mateus.ceosexpress@gmail.com',
-      'ceosexpressltda@gmail.com',
-      'marcos.junior@ceosexpress.com',
-    ],
-    'Samy Transportes Ltda': ['jonathan.silva@samylog.com', 'financeiro@samylog.com'],
-    'EASY CARGO SOLUÇOES': [
-      'financeiro@easycargoexpress.com.br',
-      'fabio.costa@easycargoexpress.com.br',
-      'ketulyrodriguesdenoronha@gmail.com',
-      'rogerio.matos@easycargoexpress.com.br',
-    ],
-    'PACHECO E PACHECO': ['mayara.pachecotransportes@gmail.com'],
-    'FAP': ['faptransportessbc@gmail.com'],
-    'CAPITAO EXPRESS': ['rafael@excapitao.com.br', 'expressocapitao@gmail.com'],
-    'TRANS CHIC': ['jonathan.rocha@nlaexpress.com.br'],
-    'DAY TRANSPORTES LTDA': ['Igor.silva@daytransportes.com.br', 'Luana@daytransportes.com.br', 'Juliana.financeiro@daytransportes.com.br'],
-    'Acrion Express Logistica': ['danilo.guimaraes@acrionexpress.com'],
-    'D GARCIA TRANSPORTES': ['rafael.mendes@dgarciatransportes.com.br', 'Matheus.oliveira@dgarciatransportes.com.br'],
+    'confidencial': 'confidencial'
   };
 
   // ===========================================================================
@@ -116,10 +82,10 @@
   // ===========================================================================
 
   const EMAIL = {
-    urlFeishuMail: 'https://jtexpress.sg.feishu.cn/mail',
+    urlFeishuMail: 'confidencial',
     assunto: 'Solicitação de Cadastro / Ajuste de Veículos',
-    copia: ['robert.wallace@jtexpress.com.br', 'suelyn.alima@jtexpress.com.br'], // Cc fixo em todos os e-mails ([] = sem Cc)
-    linkForms: 'https://jtexpress.sg.feishu.cn/share/base/form/shrlg9HZHuwE6o0MbsJiWgaznJf',
+    copia: ['confidencial'], // Cc fixo em todos os e-mails ([] = sem Cc)
+    linkForms: 'confidencial'
   };
 
   // Corpo do e-mail: cada item da lista é uma linha ('' = linha em branco)
@@ -323,7 +289,7 @@
     if (!id) throw new Error('Não achei o ID da planilha no endereço da página.');
 
     try {
-      const res = await baixarArquivo(`https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`);
+      const res = await baixarArquivo('confidencial');
       const texto = new TextDecoder('utf-8').decode(res.response || new ArrayBuffer(0));
       // CSV de verdade não começa com "<" (isso seria uma página de login/erro)
       if (res.status === 200 && texto && !texto.trimStart().startsWith('<')) {
@@ -333,18 +299,17 @@
       console.warn('[Placas] CSV da aba falhou:', e.message);
     }
 
-    for (const url of [`https://docs.google.com/spreadsheets/d/${id}/export?format=xlsx`, `https://drive.google.com/uc?export=download&id=${id}`]) {
-      try {
-        const res = await baixarArquivo(url);
-        const bytes = new Uint8Array(res.response || []);
-        // .xlsx de verdade começa com "PK" (é um zip)
-        if (res.status === 200 && bytes[0] === 0x50 && bytes[1] === 0x4b) {
-          return lerAba(XLSX.read(bytes, { type: 'array' }), nomeAbaAberta());
-        }
-      } catch (e) {
-        console.warn('[Placas] Falhou ao baixar de ' + url + ':', e.message);
+    try {
+      const res = await baixarArquivo('confidencial');
+      const bytes = new Uint8Array(res.response || []);
+      // .xlsx de verdade começa com "PK" (é um zip)
+      if (res.status === 200 && bytes[0] === 0x50 && bytes[1] === 0x4b) {
+        return lerAba(XLSX.read(bytes, { type: 'array' }), nomeAbaAberta());
       }
+    } catch (e) {
+      console.warn('[Placas] Falhou ao baixar de url:', e.message);
     }
+    
     throw new Error('Não consegui baixar a planilha. Confira se está logado no Google e tem acesso ao arquivo.');
   }
 
@@ -390,8 +355,8 @@
   //   placa ("GRU2087") -> empresas em que ela está cadastrada (['CHIC TRANSPORTES LTDA', ...])
   // Lê a tabela toda, sem visualização: filtros de uma visualização escondem linhas.
   async function lerCadastroFeishu() {
-    const tabela = `bitable/v1/apps/${FEISHU.appToken}/tables/${FEISHU.tableId}`;
-
+    
+    const tabela = 'confidencial';
     const colunas = (await chamarFeishu('GET', `${tabela}/fields?page_size=100`)).items.map((c) => c.field_name);
     const cPlaca = acharColuna(colunas, FEISHU.colunaPlaca);
     const cTransportadora = acharColuna(colunas, FEISHU.colunaTransportadora);
@@ -429,7 +394,8 @@
   async function chamarFeishu(metodo, caminho, corpo) {
     for (let tentativa = 1; ; tentativa++) {
       const token = await pegarToken();
-      const resp = await requisicao(metodo, `https://open.feishu.cn/open-apis/${caminho}`, corpo, token);
+      const resp = await requisicao(metodo, 'confidencial', corpo, token);
+
       if (resp.code === 0) return resp.data;
       if (ERROS_DE_TOKEN.includes(resp.code) && tentativa === 1) {
         GM_setValue(CHAVE.token, null);
@@ -450,10 +416,11 @@
     const guardado = GM_getValue(CHAVE.token, null);
     if (guardado && guardado.expira - Date.now() > 5 * 60 * 1000) return guardado.token;
 
-    const resp = await requisicao('POST', 'https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal', {
+    const resp = await requisicao('POST', 'confidencial', {
       app_id: FEISHU.appId,
       app_secret: FEISHU.appSecret,
     });
+    
     if (resp.code !== 0) throw new Error('Login no Feishu falhou: ' + resp.msg);
     GM_setValue(CHAVE.token, { token: resp.tenant_access_token, expira: Date.now() + resp.expire * 1000 });
     return resp.tenant_access_token;
@@ -894,107 +861,4 @@
     // se a janela do navegador diminuir, traz o painel de volta para dentro da tela
     window.addEventListener('resize', () => raiz.style.left && posicionar(raiz.offsetLeft, raiz.offsetTop));
 
-    // minimizar / abrir no botão do canto (lembrado por página)
-    const chaveMin = `painel_minimizado_${id}`;
-    const minimizar = (sim) => {
-      raiz.classList.toggle('jms-minimizado', sim);
-      btnMin.textContent = sim ? '+' : '−';
-      btnMin.title = sim ? 'Abrir' : 'Minimizar';
-      if (raiz.style.left) posicionar(raiz.offsetLeft, raiz.offsetTop); // abrir pode passar da borda
-    };
-    minimizar(GM_getValue(chaveMin, false));
-    btnMin.addEventListener('click', () => {
-      const sim = !raiz.classList.contains('jms-minimizado');
-      GM_setValue(chaveMin, sim);
-      minimizar(sim);
-    });
-
-    let acao = null;
-    botao.addEventListener('click', () => acao && acao());
-
-    return {
-      status(texto, tipo = 'neutro') {
-        msg.textContent = texto;
-        msg.dataset.tipo = tipo;
-        ponto.dataset.tipo = tipo;
-        cab.title = texto; // aparece ao passar o mouse com o painel minimizado
-        if (tipo === 'erro') minimizar(false); // erro sempre aparece aberto
-      },
-      numeros(lista) {
-        numeros.replaceChildren(
-          ...lista.map(([rotulo, valor]) => {
-            const caixa = criarEl('div', 'jms-num');
-            caixa.append(criarEl('strong', null, String(valor)), criarEl('span', null, rotulo));
-            return caixa;
-          })
-        );
-      },
-      aviso(texto) {
-        aviso.textContent = texto || '';
-      },
-      detalhes(linhas) {
-        const MAX = 200; // mais que isso deixa a tela lenta; a lista completa fica no console
-        const mostrar = linhas.slice(0, MAX).map((l) => criarEl('div', null, l));
-        if (linhas.length > MAX) mostrar.push(criarEl('div', null, `... e mais ${linhas.length - MAX} (lista completa no console, F12)`));
-        detalhes.replaceChildren(...mostrar);
-      },
-      adicionarDetalhe(linha) {
-        detalhes.append(criarEl('div', null, linha));
-      },
-      botao(texto, aoClicar) {
-        acao = aoClicar;
-        botao.textContent = texto || '';
-        botao.style.display = texto ? '' : 'none';
-        botao.disabled = !aoClicar;
-      },
-      limpar() {
-        numeros.replaceChildren();
-        detalhes.replaceChildren();
-        aviso.textContent = '';
-      },
-    };
-  }
-
-  // ===========================================================================
-  // PARTE 11 - FUNÇÕES DE APOIO
-  // ===========================================================================
-
-  function esperar(ms) {
-    return new Promise((r) => setTimeout(r, ms));
-  }
-
-  // Fica olhando a página até achar(); devolve o elemento ou dá erro depois de "ms"
-  async function esperarElemento(achar, descricao, ms = TEMPO.esperaElemento) {
-    const inicio = Date.now();
-    while (Date.now() - inicio < ms) {
-      const el = achar();
-      if (el) return el;
-      await esperar(200);
-    }
-    throw new Error(`Não achei ${descricao} no Feishu Mail (esperei ${Math.round(ms / 1000)} s).`);
-  }
-
-  // "gru-2087 " -> "GRU2087"
-  function normalizarPlaca(s) {
-    return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  }
-
-  // "Chic Transportes Ltda." -> "chic transportes ltda" (sem acento, pontuação e espaço sobrando)
-  function normalizarNome(s) {
-    return String(s || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
-      .trim();
-  }
-
-  function criarEl(tag, classe, texto) {
-    const el = document.createElement(tag);
-    if (classe) el.className = classe;
-    if (texto != null) el.textContent = texto;
-    return el;
-  }
-
-  iniciar();
-})();
+    // minimizar / abrir no
